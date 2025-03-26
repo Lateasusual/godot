@@ -55,6 +55,26 @@ WheelTV::WheelTV(const WheelSettingsTV &inSettings) :
 
 void WheelTV::CalculateAngularVelocity(const VehicleConstraint &inConstraint)
 {
+	// HACK: Allow for un-driven, non-tracked wheels (for half-track/kettenkrad type vehicles)
+	if (mTrackIndex == -1) {
+		if (HasContact()) {
+			// Assume the wheel has no connection to engines... or brakes... hmm.
+			float max_longitudinal_friction_impulse = GetSuspensionLambda() * GetSettings()->mLongitudinalFriction;
+
+			Vec3 relative_velocity = inConstraint.GetVehicleBody()->GetPointVelocity(GetContactPosition()) - GetContactPointVelocity();
+			float relative_longitudinal_velocity = relative_velocity.Dot(GetContactLongitudinal());
+
+			float desired_angular_velocity = relative_longitudinal_velocity / GetSettings()->mRadius;
+			float inertia = 0.5 * /*mass*/ 12.f * powf(/* radius: */0.25, 2.0);
+			float linear_impulse = (GetAngularVelocity() - desired_angular_velocity) * inertia / GetSettings()->mRadius;
+
+			float prev_lambda = GetLongitudinalLambda();
+			float max_longitudinal_impulse = Clamp(prev_lambda + linear_impulse, -max_longitudinal_friction_impulse, max_longitudinal_friction_impulse);
+			SolveLongitudinalConstraintPart(inConstraint, max_longitudinal_impulse, max_longitudinal_impulse);
+			SetAngularVelocity(GetAngularVelocity() - (GetLongitudinalLambda() - prev_lambda) * GetSettings()->mRadius / inertia);
+		}
+		return;
+	}
 	const WheelSettingsTV *settings = GetSettings();
 	const Wheels &wheels = inConstraint.GetWheels();
 	const VehicleTrack &track = static_cast<const TrackedVehicleController *>(inConstraint.GetController())->GetTracks()[mTrackIndex];
@@ -357,6 +377,10 @@ bool TrackedVehicleController::SolveLongitudinalAndLateralConstraints(float inDe
 		{
 			WheelTV *w = static_cast<WheelTV *>(w_base);
 			const WheelSettingsTV *settings = w->GetSettings();
+
+			// Skip wheels without assigned tracks. They will update themselves later.
+			if (w->mTrackIndex == -1) { continue; }
+
 			VehicleTrack &track = mTracks[w->mTrackIndex];
 
 			// Calculate max impulse that we can apply on the ground

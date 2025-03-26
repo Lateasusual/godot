@@ -36,6 +36,9 @@
 
 #include "core/config/project_settings.h"
 #include "core/object/callable_mp.h"
+
+#include "modules/jolt_physics/nodes/jolt_vehicle_body.h"
+
 #include "servers/physics_3d/physics_server_3d_wrap_mt.h"
 
 PhysicsServer3D *create_jolt_physics_server() {
@@ -51,13 +54,30 @@ PhysicsServer3D *create_jolt_physics_server() {
 }
 
 void initialize_jolt_physics_module(ModuleInitializationLevel p_level) {
-	if (p_level != MODULE_INITIALIZATION_LEVEL_SERVERS) {
-		return;
-	}
+	switch (p_level) {
+		case MODULE_INITIALIZATION_LEVEL_CORE: {
+		} break;
+		case MODULE_INITIALIZATION_LEVEL_SERVERS: {
+			jolt_initialize();
+			PhysicsServer3DManager::get_singleton()->register_server("Jolt Physics", callable_mp_static(&create_jolt_physics_server));
+			JoltProjectSettings::register_settings();
+		} break;
+		case MODULE_INITIALIZATION_LEVEL_SCENE: {
+			GDREGISTER_CLASS(JoltVehicleEngineSettings)
+			GDREGISTER_CLASS(JoltVehicleTransmissionSettings)
 
-	jolt_initialize();
-	PhysicsServer3DManager::get_singleton()->register_server("Jolt Physics", callable_mp_static(&create_jolt_physics_server));
-	JoltProjectSettings::register_settings();
+			GDREGISTER_ABSTRACT_CLASS(JoltVehicleWheelBase)
+			GDREGISTER_CLASS(JoltVehicleWheel)
+			GDREGISTER_CLASS(JoltVehicleWheelTracked)
+
+			GDREGISTER_ABSTRACT_CLASS(JoltVehicleBody)
+			GDREGISTER_CLASS(JoltVehicleBodyWheeled)
+			GDREGISTER_CLASS(JoltVehicleBodyMotorcycle);
+			GDREGISTER_CLASS(JoltVehicleBodyTracked)
+		} break;
+		case MODULE_INITIALIZATION_LEVEL_EDITOR: {
+		} break;
+	}
 }
 
 void uninitialize_jolt_physics_module(ModuleInitializationLevel p_level) {
