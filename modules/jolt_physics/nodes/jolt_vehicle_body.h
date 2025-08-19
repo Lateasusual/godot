@@ -7,6 +7,7 @@
 #include "Jolt/Physics/Vehicle/WheeledVehicleController.h"
 #include "scene/3d/physics/rigid_body_3d.h"
 #include "scene/property_list_helper.h"
+#include "scene/resources/mesh.h"
 
 class JoltVehicleBodyTracked;
 class JoltVehicleBodyWheeled;

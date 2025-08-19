@@ -33,6 +33,7 @@
 #include "../spaces/jolt_physics_direct_space_state_3d.h"
 #include "../spaces/jolt_space_3d.h"
 #include "jolt_body_3d.h"
+#include "modules/jolt_physics/misc/jolt_type_conversions.h"
 
 JoltPhysicsDirectBodyState3D::JoltPhysicsDirectBodyState3D(JoltBody3D *p_body) :
 		body(p_body) {
@@ -258,4 +259,75 @@ void JoltPhysicsDirectBodyState3D::integrate_forces() {
 
 RequiredResult<PhysicsDirectSpaceState3D> JoltPhysicsDirectBodyState3D::get_space_state() {
 	return body->get_space()->get_direct_state();
+}
+
+PackedVector3Array JoltPhysicsDirectBodyState3D::get_shape_triangles(AABB region) const {
+	const JPH::Body* jolt_body = body->get_jolt_body();
+
+	const JPH::Shape* shape = jolt_body->GetShape();
+
+	const int MAX_TRIANGLE_CHUNK = 1024;
+
+	class MyCollector : public JPH::TransformedShapeCollector
+	{
+		AABB _region;
+		JPH::VertexList output_buffer;
+	public:
+		MyCollector(AABB region) : _region(region) {
+			output_buffer.resize(MAX_TRIANGLE_CHUNK * 3);
+		}
+
+		void AddHit(const JPH::TransformedShape &inShape) override {
+			// TODO limit the final output somehow
+			JPH::Shape::GetTrianglesContext triangles_context {};
+
+			inShape.GetTrianglesStart(triangles_context,to_jolt(_region), JPH::Vec3::sZero());
+
+			while (true) {
+				int num_tris = inShape.GetTrianglesNext(triangles_context, MAX_TRIANGLE_CHUNK, output_buffer.data());
+				if (num_tris <= 0) {
+					break;
+				}
+
+				int prev_tot = out_triangles.size();
+
+				for (int i = 0; i < num_tris * 3; i += 3) {
+					Vector3 v1 = to_godot(JPH::Vec3(output_buffer[i + 0]));
+					Vector3 v2 = to_godot(JPH::Vec3(output_buffer[i + 1]));
+					Vector3 v3 = to_godot(JPH::Vec3(output_buffer[i + 2]));
+
+					// Finer culling
+					AABB triangle_aabb = AABB(v1, Vector3());
+					triangle_aabb.expand_to(v2);
+					triangle_aabb.expand_to(v3);
+
+					if (!triangle_aabb.intersects(_region)) {
+						continue;
+					}
+
+					out_triangles.push_back(v1);
+					out_triangles.push_back(v2);
+					out_triangles.push_back(v3);
+				}
+			}
+
+		}
+
+		PackedVector3Array out_triangles;
+	};
+
+	MyCollector leaf_shapes(region);
+	JPH::SubShapeIDCreator subShapeIdCreator;
+
+	shape->CollectTransformedShapes(
+			to_jolt(region),
+			jolt_body->GetCenterOfMassPosition(),
+			jolt_body->GetRotation(),
+			JPH::Vec3::sOne(),
+			subShapeIdCreator,
+			leaf_shapes,
+			JPH::ShapeFilter()
+	);
+
+	return leaf_shapes.out_triangles;
 }

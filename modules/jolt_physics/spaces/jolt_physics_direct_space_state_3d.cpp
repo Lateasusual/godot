@@ -902,3 +902,124 @@ bool JoltPhysicsDirectSpaceState3D::body_test_motion(const JoltBody3D &p_body, c
 
 	return collided;
 }
+
+class CustomPlaneCollectorQuery final : public JPH::CollideShapeCollector {
+	const static int DefaultCapacity = 8;
+public:
+	typedef typename JPH::CollideShapeCollector::ResultType Hit;
+
+	struct HitPlane {
+		JPH::Vec3 normal;
+		JPH::Vec3 position;
+	};
+
+	typedef JPH::Array<HitPlane, JPH::STLLocalAllocator<HitPlane, DefaultCapacity + 1>> HitArray;
+private:
+	HitArray hits;
+	int max_hits = 0;
+
+public:
+	explicit CustomPlaneCollectorQuery(int p_max_hits = DefaultCapacity) : max_hits(p_max_hits) {
+		hits.reserve(DefaultCapacity + 1);
+	}
+
+	bool had_hit() const {
+		return hits.size() > 0;
+	}
+
+	int get_hit_count() const {
+		return hits.size();
+	}
+
+	const HitPlane &get_hit(int p_index) const {
+		return hits[p_index];
+	}
+
+	void reset() {
+		Reset();
+	}
+
+	virtual void Reset() override {
+		JPH::CollideShapeCollector::Reset();
+		hits.clear();
+	}
+
+	virtual void AddHit(const Hit &p_hit) override {
+		HitPlane p_plane;
+		p_plane.normal = -p_hit.mPenetrationAxis.Normalized();
+		p_plane.position = p_hit.mContactPointOn2;
+
+		// Ignore backfacing hits (but we still test them relative to the overall shape...)
+//		if (p_plane.position.Normalized().Dot(p_plane.normal) > 0.0) {
+//			return;
+//		}
+
+		typename HitArray::iterator E = hits.begin();
+		for (; E != hits.end(); ++E) {
+			// Merge planes of similar distance and direction
+			if (p_plane.normal.Dot(E->normal) > 0.98) {
+				// If it's a closer plane with the same normal, use that instead, discard the old one.
+				if (p_plane.position.LengthSq() < E->position.LengthSq()) {
+					*E = p_plane;
+					return;
+				}
+				// Otherwise just ignore it completely.
+				return;
+			}
+		}
+
+		hits.insert(E, p_plane);
+
+		if ((int)hits.size() > max_hits) {
+			hits.resize(max_hits);
+		}
+	}
+};
+
+TypedArray<Dictionary> JoltPhysicsDirectSpaceState3D::collect_shape_collisions(const Ref<PhysicsShapeQueryParameters3D> &p_shape_query, int p_max_results) {
+	TypedArray<Dictionary> results;
+	ERR_FAIL_COND_V(p_shape_query.is_null(), results);
+
+	const ShapeParameters &p_parameters = p_shape_query->get_parameters();
+
+	ERR_FAIL_COND_V_MSG(space->is_stepping(), results, "collect_shape_collisions must not be called while the physics space is being stepped.");
+
+	space->flush_pending_objects();
+
+	JoltShape3D *shape = JoltPhysicsServer3D::get_singleton()->get_shape(p_parameters.shape_rid);
+	ERR_FAIL_NULL_V(shape, results);
+
+	const JPH::ShapeRefC jolt_shape = shape->try_build();
+	ERR_FAIL_NULL_V(jolt_shape, results);
+
+	Transform3D transform = p_parameters.transform;
+	JOLT_ENSURE_SCALE_NOT_ZERO(transform, "collect_shape_collisions was passed an invalid transform.");
+
+	Vector3 scale;
+	JoltMath::decompose(transform, scale);
+	JOLT_ENSURE_SCALE_VALID(jolt_shape, scale, "collect_shape_collisions was passed an invalid transform.");
+
+	const Vector3 com_scaled = to_godot(jolt_shape->GetCenterOfMass());
+	const Transform3D transform_com = transform.translated_local(com_scaled);
+
+	JPH::CollideShapeSettings settings;
+	settings.mMaxSeparationDistance = (float) p_parameters.margin;
+	settings.mActiveEdgeMovementDirection = to_jolt(p_parameters.motion);
+	const Vector3 &base_offset = transform_com.origin;
+
+	const JoltQueryFilter3D query_filter(*this, p_parameters.collision_mask, p_parameters.collide_with_bodies, p_parameters.collide_with_areas, p_parameters.exclude);
+	CustomPlaneCollectorQuery collector(p_max_results);
+	_collide_shape_queries(jolt_shape, to_jolt(scale), to_jolt_r(transform_com), settings, to_jolt_r(base_offset), collector, query_filter, query_filter, query_filter);
+
+	for (int i = 0; i < collector.get_hit_count(); i++) {
+		const CustomPlaneCollectorQuery::HitPlane &hit = collector.get_hit(i);
+
+		Dictionary d;
+		d["position"] = base_offset + to_godot(hit.position);
+		d["normal"] = to_godot(hit.normal);
+
+		results.push_back(d);
+	}
+
+	return results;
+}

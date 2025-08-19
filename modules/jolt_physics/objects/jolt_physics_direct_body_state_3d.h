@@ -31,6 +31,7 @@
 #pragma once
 
 #include "servers/physics_3d/physics_server_3d.h"
+#include "core/variant/typed_array.h"
 
 class JoltBody3D;
 
@@ -45,6 +46,8 @@ public:
 	JoltPhysicsDirectBodyState3D() = default;
 
 	explicit JoltPhysicsDirectBodyState3D(JoltBody3D *p_body);
+
+	virtual PackedVector3Array get_shape_triangles(AABB region) const override;
 
 	virtual Vector3 get_total_gravity() const override;
 	virtual real_t get_total_linear_damp() const override;

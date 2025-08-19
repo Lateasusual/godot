@@ -39,6 +39,7 @@
 
 #include "modules/jolt_physics/nodes/jolt_vehicle_body.h"
 
+#include "modules/jolt_physics/spaces/jolt_physics_direct_space_state_3d.h"
 #include "servers/physics_3d/physics_server_3d_wrap_mt.h"
 
 PhysicsServer3D *create_jolt_physics_server() {
@@ -61,6 +62,7 @@ void initialize_jolt_physics_module(ModuleInitializationLevel p_level) {
 			jolt_initialize();
 			PhysicsServer3DManager::get_singleton()->register_server("Jolt Physics", callable_mp_static(&create_jolt_physics_server));
 			JoltProjectSettings::register_settings();
+			GDREGISTER_CLASS(JoltPhysicsDirectSpaceState3D)
 		} break;
 		case MODULE_INITIALIZATION_LEVEL_SCENE: {
 			GDREGISTER_CLASS(JoltVehicleEngineSettings)

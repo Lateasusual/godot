@@ -160,6 +160,8 @@ void PhysicsDirectBodyState3D::_bind_methods() {
 	ClassDB::bind_method(D_METHOD("integrate_forces"), &PhysicsDirectBodyState3D::integrate_forces);
 	ClassDB::bind_method(D_METHOD("get_space_state"), &PhysicsDirectBodyState3D::get_space_state);
 
+	ClassDB::bind_method(D_METHOD("get_shape_triangles", "region"), &PhysicsDirectBodyState3D::get_shape_triangles);
+
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "step"), "", "get_step");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inverse_mass"), "", "get_inverse_mass");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "total_angular_damp"), "", "get_total_angular_damp");

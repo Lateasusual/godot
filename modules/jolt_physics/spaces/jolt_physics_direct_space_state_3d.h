@@ -42,6 +42,8 @@
 #include <Jolt/Physics/Collision/Shape/Shape.h>
 #include <Jolt/Physics/Collision/ShapeFilter.h>
 
+#include "core/variant/typed_array.h"
+
 class JoltBody3D;
 class JoltShape3D;
 class JoltSpace3D;
@@ -51,7 +53,9 @@ class JoltPhysicsDirectSpaceState3D final : public PhysicsDirectSpaceState3D {
 
 	JoltSpace3D *space = nullptr;
 
-	static void _bind_methods() {}
+	static void _bind_methods() {
+		ClassDB::bind_method(D_METHOD("collect_shape_collisions", "query_parameters", "max_results"), &JoltPhysicsDirectSpaceState3D::collect_shape_collisions);
+	}
 
 	bool _cast_motion_impl(const JPH::Shape &p_jolt_shape, const Transform3D &p_transform_com, const Vector3 &p_scale, const Vector3 &p_motion, bool p_use_edge_removal, bool p_ignore_overlaps, const JPH::CollideShapeSettings &p_settings, const JPH::BroadPhaseLayerFilter &p_broad_phase_layer_filter, const JPH::ObjectLayerFilter &p_object_layer_filter, const JPH::BodyFilter &p_body_filter, const JPH::ShapeFilter &p_shape_filter, real_t &r_closest_safe, real_t &r_closest_unsafe) const;
 
@@ -69,6 +73,8 @@ class JoltPhysicsDirectSpaceState3D final : public PhysicsDirectSpaceState3D {
 public:
 	JoltPhysicsDirectSpaceState3D() = default;
 	explicit JoltPhysicsDirectSpaceState3D(JoltSpace3D *p_space);
+
+	TypedArray<Dictionary> collect_shape_collisions(const Ref<PhysicsShapeQueryParameters3D> &p_shape_query, int p_max_results);
 
 	virtual bool intersect_ray(const RayParameters &p_parameters, RayResult &r_result) override;
 	virtual int intersect_point(const PointParameters &p_parameters, ShapeResult *r_results, int p_result_max) override;

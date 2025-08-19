@@ -115,6 +115,10 @@ public:
 
 	virtual RequiredResult<PhysicsDirectSpaceState3D> get_space_state() = 0;
 
+	virtual PackedVector3Array get_shape_triangles(AABB region) const {
+		return PackedVector3Array();
+	}
+
 	PhysicsDirectBodyState3D();
 };
 
