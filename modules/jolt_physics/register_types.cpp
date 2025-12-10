@@ -33,6 +33,7 @@
 #include "jolt_globals.h"
 #include "jolt_physics_server_3d.h"
 #include "jolt_project_settings.h"
+#include "modules/register_module_types.h"
 
 #include "core/config/project_settings.h"
 #include "core/object/callable_mp.h"
@@ -40,6 +41,7 @@
 #include "modules/jolt_physics/nodes/jolt_vehicle_body.h"
 
 #include "modules/jolt_physics/spaces/jolt_physics_direct_space_state_3d.h"
+#include "nodes/jolt_character.h"
 #include "servers/physics_3d/physics_server_3d_wrap_mt.h"
 
 PhysicsServer3D *create_jolt_physics_server() {
@@ -74,8 +76,10 @@ void initialize_jolt_physics_module(ModuleInitializationLevel p_level) {
 
 			GDREGISTER_ABSTRACT_CLASS(JoltVehicleBody)
 			GDREGISTER_CLASS(JoltVehicleBodyWheeled)
-			GDREGISTER_CLASS(JoltVehicleBodyMotorcycle);
+			GDREGISTER_CLASS(JoltVehicleBodyMotorcycle)
 			GDREGISTER_CLASS(JoltVehicleBodyTracked)
+
+			GDREGISTER_CLASS(JoltCharacter)
 		} break;
 		case MODULE_INITIALIZATION_LEVEL_EDITOR: {
 		} break;

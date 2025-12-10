@@ -449,7 +449,7 @@ void JoltVehicleBody::_space_changed(const RID &p_new_space) {
 void JoltVehicleBody::_body_state_changed(PhysicsDirectBodyState3D *p_state) {
 	RigidBody3D::_body_state_changed(p_state);
 
-	auto *space_state = p_state->get_space_state();
+	PhysicsDirectSpaceState3D *space_state = p_state->get_space_state();
 	for (auto *wheel_node : child_wheels) {
 		wheel_node->update_wheel_runtime(m_vehicle_constraint, space_state);
 	}

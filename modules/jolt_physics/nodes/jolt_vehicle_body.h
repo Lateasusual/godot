@@ -109,7 +109,7 @@ protected:
 	TypedArray<float> get_gear_ratios() const {
 		TypedArray<float> gears;
 		gears.resize(settings.mGearRatios.size());
-		for (uint i = 0; i < settings.mGearRatios.size(); i++) {
+		for (uint32_t i = 0; i < settings.mGearRatios.size(); i++) {
 			gears[i] = settings.mGearRatios[i];
 		}
 		return gears;
@@ -125,7 +125,7 @@ protected:
 	TypedArray<float> get_reverse_gear_ratios() const {
 		TypedArray<float> gears;
 		gears.resize(settings.mReverseGearRatios.size());
-		for (uint i = 0; i < settings.mReverseGearRatios.size(); i++) {
+		for (uint32_t i = 0; i < settings.mReverseGearRatios.size(); i++) {
 			gears[i] = settings.mReverseGearRatios[i];
 		}
 		return gears;

@@ -44,7 +44,7 @@ public:
 	PackedFloat32Array get_wheel_angular_velocities();
 	PackedFloat32Array get_wheel_lateral_relative_velocities();
 
-	Transform3D get_wheel_transform(uint wheel_idx);
+	Transform3D get_wheel_transform(uint32_t wheel_idx);
 
 	JoltKettenkrad();
 	~JoltKettenkrad();

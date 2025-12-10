@@ -125,7 +125,7 @@ PackedVector3Array JoltKettenkrad::get_wheel_positions() {
 	}
 
 	auto array = PackedVector3Array();
-	for (uint w = 0; w < m_vehicle_constraint->GetWheels().size(); ++w)
+	for (uint32_t w = 0; w < m_vehicle_constraint->GetWheels().size(); ++w)
 	{
 		JPH::RMat44 wheel_transform = m_vehicle_constraint->GetWheelLocalTransform(w, JPH::Vec3::sAxisY(), JPH::Vec3::sAxisX()); // The cylinder we draw is aligned with Y so we specify that as rotational axis
 		array.append(to_godot(wheel_transform.GetTranslation()));
@@ -140,7 +140,7 @@ PackedFloat32Array JoltKettenkrad::get_wheel_rotation_angles() {
 	}
 
 	auto array = PackedFloat32Array();
-	for (uint w = 0; w < m_vehicle_constraint->GetWheels().size(); ++w)
+	for (uint32_t w = 0; w < m_vehicle_constraint->GetWheels().size(); ++w)
 	{
 		const JPH::Wheel* wheel = m_vehicle_constraint->GetWheel(w);
 		array.append(wheel->GetRotationAngle());
@@ -157,7 +157,7 @@ PackedFloat32Array JoltKettenkrad::get_wheel_angular_velocities() {
 	auto array = PackedFloat32Array();
 	JPH::Wheels& wheels = m_vehicle_constraint->GetWheels();
 	array.resize(wheels.size());
-	for (uint w = 0; w < wheels.size(); ++w) {
+	for (uint32_t w = 0; w < wheels.size(); ++w) {
 		array.set(w, wheels[w]->GetAngularVelocity());
 	}
 
@@ -173,7 +173,7 @@ PackedFloat32Array JoltKettenkrad::get_wheel_lateral_relative_velocities() {
 	auto array = PackedFloat32Array();
 	JPH::Wheels& wheels = m_vehicle_constraint->GetWheels();
 	array.resize(wheels.size());
-	for (uint w = 0; w < wheels.size(); ++w) {
+	for (uint32_t w = 0; w < wheels.size(); ++w) {
 		auto* wheel = wheels[w];
 		JPH::Vec3 relative_velocity = m_vehicle_constraint->GetVehicleBody()->GetPointVelocity(wheel->GetContactPosition()) - wheel->GetContactPointVelocity();
 		float relative_lateral_velocity = relative_velocity.Dot(wheel->GetContactLateral());
@@ -198,7 +198,7 @@ PackedInt32Array JoltKettenkrad::get_wheel_contacts() {
 	return array;
 }
 
-Transform3D JoltKettenkrad::get_wheel_transform(uint wheel_idx) {
+Transform3D JoltKettenkrad::get_wheel_transform(uint32_t wheel_idx) {
 	if (Engine::get_singleton()->is_editor_hint() || m_vehicle_constraint == nullptr || wheel_idx >= m_vehicle_constraint->GetWheels().size()) {
 		return Transform3D();
 	}
@@ -296,7 +296,7 @@ void JoltKettenkrad::init_vehicle() {
 		JPH::Vec3(0.0f, 0.05f, -1.14f),
 	};
 
-	const uint NUM_WHEELS_PER_TRACK = 6;
+	const uint32_t NUM_WHEELS_PER_TRACK = 6;
 
 	float wheel_radius = 0.25f;
 	float wheel_width = 0.15f;
@@ -311,10 +311,10 @@ void JoltKettenkrad::init_vehicle() {
 		track.mMaxBrakeTorque = 500.0f;
 		track.mDifferentialRatio = /* Differential Gear = */ 1.91 * /* Reduction Drive */ 2.143;
 
-		track.mDrivenWheel = (uint)(vehicle.mWheels.size() + NUM_WHEELS_PER_TRACK - 1);
+		track.mDrivenWheel = (uint32_t)(vehicle.mWheels.size() + NUM_WHEELS_PER_TRACK - 1);
 		track.mInertia = 2.0f;
 
-		for (uint wheel = 0; wheel < NUM_WHEELS_PER_TRACK; wheel++) {
+		for (uint32_t wheel = 0; wheel < NUM_WHEELS_PER_TRACK; wheel++) {
 			JPH::WheelSettingsTV* w = new JPH::WheelSettingsTV();
 
 			w->mPosition = wheel_pos[wheel];
@@ -336,7 +336,7 @@ void JoltKettenkrad::init_vehicle() {
 			w->mSuspensionSpring.mFrequency = suspension_frequency;
 
 			// Add the wheel to the vehicle
-			track.mWheels.push_back((uint)vehicle.mWheels.size());
+			track.mWheels.push_back((uint32_t)vehicle.mWheels.size());
 			vehicle.mWheels.push_back(w);
 
 			// Add anti-roll bars
@@ -366,7 +366,7 @@ void JoltKettenkrad::init_vehicle() {
 
 	m_vehicle_constraint = new JPH::VehicleConstraint(*body, vehicle);
 
-	JPH::VehicleConstraint::CombineFunction combine_function = [this](uint, float &ioLongitudinalFriction, float &ioLateralFriction, const JPH::Body &inBody2, const JPH::SubShapeID &)
+	JPH::VehicleConstraint::CombineFunction combine_function = [this](uint32_t, float &ioLongitudinalFriction, float &ioLateralFriction, const JPH::Body &inBody2, const JPH::SubShapeID &)
 	{
 		float body_friction = inBody2.GetFriction();
 		ioLongitudinalFriction = sqrt(ioLongitudinalFriction * body_friction * this->friction_factor);
