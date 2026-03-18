@@ -1,11 +1,13 @@
 #include "jolt_vehicle_body.h"
-#include "../jolt_physics_server_3d.h"
 
+#include "../jolt_physics_server_3d.h"
 #include "../misc/jolt_type_conversions.h"
 #include "../objects/jolt_body_3d.h"
 #include "../spaces/jolt_space_3d.h"
 #include "Jolt/Physics/Vehicle/TrackedVehicleController.h"
 #include "Jolt/Physics/Vehicle/WheeledVehicleController.h"
+
+#include "core/object/class_db.h"
 
 void bake_linear_curve(const Ref<Curve> &godot_curve,
 		JPH::LinearCurve &jolt_curve,
@@ -107,7 +109,7 @@ void JoltVehicleWheelBase::_notification(int p_what) {
 		} break;
 		case NOTIFICATION_EXIT_TREE: {
 			if (Engine::get_singleton()->is_editor_hint()) {
-				RS::get_singleton()->free(debug_draw_instance);
+				RS::get_singleton()->free_rid(debug_draw_instance);
 			}
 		} break;
 		case NOTIFICATION_TRANSFORM_CHANGED: {

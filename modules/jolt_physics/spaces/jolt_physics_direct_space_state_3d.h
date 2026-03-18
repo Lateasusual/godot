@@ -43,6 +43,7 @@
 #include <Jolt/Physics/Collision/ShapeFilter.h>
 
 #include "core/variant/typed_array.h"
+#include "core/object/class_db.h"
 
 class JoltBody3D;
 class JoltShape3D;

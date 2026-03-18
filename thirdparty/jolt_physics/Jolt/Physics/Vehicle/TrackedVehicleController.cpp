@@ -65,7 +65,13 @@ void WheelTV::CalculateAngularVelocity(const VehicleConstraint &inConstraint)
 			float relative_longitudinal_velocity = relative_velocity.Dot(GetContactLongitudinal());
 
 			float desired_angular_velocity = relative_longitudinal_velocity / GetSettings()->mRadius;
-			float inertia = 0.5 * /*mass*/ 12.f * powf(/* radius: */0.25, 2.0);
+			// float inertia = 0.5 * /*mass*/ 12.f * powf(/* radius: */ 0.25, 2.0);
+
+			// tracked vehicles have no wheel mass, only total track inertia. Estimate standalone wheel inertia from whole track...
+			// This is a really stupid way of doing this, but it's not a *totally* terrible idea in theory.
+			const VehicleTrack &track0 = static_cast<const TrackedVehicleController *>(inConstraint.GetController())->GetTracks()[0];
+			float inertia = track0.mInertia / fmaxf(static_cast<float>(track0.mWheels.size()), 1.0f);
+
 			float linear_impulse = (GetAngularVelocity() - desired_angular_velocity) * inertia / GetSettings()->mRadius;
 
 			float prev_lambda = GetLongitudinalLambda();

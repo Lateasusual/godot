@@ -5,9 +5,14 @@
 #include "Jolt/Physics/Vehicle/TrackedVehicleController.h"
 #include "Jolt/Physics/Vehicle/VehicleConstraint.h"
 #include "Jolt/Physics/Vehicle/WheeledVehicleController.h"
+
+#include "core/config/engine.h"
+#include "core/object/callable_mp.h"
 #include "scene/3d/physics/rigid_body_3d.h"
 #include "scene/property_list_helper.h"
+#include "scene/resources/curve.h"
 #include "scene/resources/mesh.h"
+#include "servers/rendering/rendering_server.h"
 
 class JoltVehicleBodyTracked;
 class JoltVehicleBodyWheeled;

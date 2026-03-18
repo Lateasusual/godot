@@ -4,6 +4,9 @@
 #include "Jolt/Physics/Collision/Shape/CylinderShape.h"
 #include "Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h"
 
+#include "core/config/engine.h"
+#include "core/object/class_db.h"
+
 #include "modules/jolt_physics/jolt_physics_server_3d.h"
 #include "modules/jolt_physics/spaces/jolt_broad_phase_layer.h"
 
