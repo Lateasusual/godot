@@ -437,7 +437,7 @@ void JoltVehicleBody::_bind_methods() {
 	base_anti_rollbar_property_helper.register_property(PropertyInfo(Variant::NODE_PATH, "left_wheel", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "JoltVehicleWheelBase"), defaults.left, &JoltVehicleBody::set_anti_roll_bar_left_wheel, &JoltVehicleBody::get_anti_roll_bar_left_wheel);
 	base_anti_rollbar_property_helper.register_property(PropertyInfo(Variant::NODE_PATH, "right_wheel", PROPERTY_HINT_NODE_PATH_VALID_TYPES, "JoltVehicleWheelBase"), defaults.right, &JoltVehicleBody::set_anti_roll_bar_right_wheel, &JoltVehicleBody::get_anti_roll_bar_right_wheel);
 	base_anti_rollbar_property_helper.register_property(PropertyInfo(Variant::FLOAT, "stiffness"), defaults.stiffness, &JoltVehicleBody::set_anti_roll_bar_stiffness, &JoltVehicleBody::get_anti_roll_bar_stiffness);
-	PropertyListHelper::register_base_helper(&base_anti_rollbar_property_helper);
+	PropertyListHelper::register_base_helper(get_class_static(), &base_anti_rollbar_property_helper);
 }
 
 void JoltVehicleBody::_space_changed(const RID &p_new_space) {
@@ -687,7 +687,7 @@ void JoltVehicleBodyWheeled::_bind_methods() {
 			&JoltVehicleBodyWheeled::set_differential_engine_torque_ratio,
 			&JoltVehicleBodyWheeled::get_differential_engine_torque_ratio);
 
-	PropertyListHelper::register_base_helper(&base_differential_helper);
+	PropertyListHelper::register_base_helper(get_class_static(), &base_differential_helper);
 }
 
 void JoltVehicleBodyWheeled::init_constraint(bool keep_state) {

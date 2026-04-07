@@ -20,19 +20,22 @@ void JoltCharacter::_bind_methods() {
 	BIND_SETGET(JoltCharacter, max_slope_angle);
 	BIND_SETGET(JoltCharacter, mass);
 	BIND_SETGET(JoltCharacter, max_strength);
-	BIND_SETGET(JoltCharacter, collision_layer);
+	// BIND_SETGET(JoltCharacter, collision_layer);
 	BIND_SETGET(JoltCharacter, collision_mask);
+
+	BIND_SETGET(JoltCharacter, character_shape);
 
 	BIND_SETGET(JoltCharacter, stick_to_floor_step_down);
 	BIND_SETGET(JoltCharacter, stairs_step_up);
 	BIND_SETGET(JoltCharacter, stairs_min_step_forward);
 	BIND_SETGET(JoltCharacter, stairs_step_forward_test);
+	BIND_SETGET(JoltCharacter, stairs_angle_forward_contact);
 	BIND_SETGET(JoltCharacter, stairs_step_down_extra);
 
 	BIND_SETGET(JoltCharacter, radius);
 	BIND_SETGET(JoltCharacter, height);
-	ClassDB::bind_method(D_METHOD("try_set_radius"), &JoltCharacter::try_set_radius);
-	ClassDB::bind_method(D_METHOD("try_set_height"), &JoltCharacter::try_set_height);
+	ClassDB::bind_method(D_METHOD("try_set_radius", "max_penetration_depth"), &JoltCharacter::try_set_radius, DEFVAL(0.05));
+	ClassDB::bind_method(D_METHOD("try_set_height", "max_penetration_depth"), &JoltCharacter::try_set_height, DEFVAL(0.05));
 
 	ClassDB::bind_method(D_METHOD("is_supported"), &JoltCharacter::is_supported);
 	ClassDB::bind_method(D_METHOD("move_and_step"), &JoltCharacter::move_and_step);
@@ -49,10 +52,10 @@ void JoltCharacter::_bind_methods() {
 	ADD_GROUP("Shape", "");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "radius", PROPERTY_HINT_RANGE, U"0,0.5,or_greater,suffix:m"), "set_radius", "get_radius");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "height", PROPERTY_HINT_RANGE, U"0,2.0,or_greater,suffix:m"), "set_height", "get_height");
-
+	ADD_PROPERTY(PropertyInfo(Variant::INT, "character_shape", PROPERTY_HINT_ENUM, U"Capsule,Cylinder"), "set_character_shape", "get_character_shape");
 
 	ADD_GROUP("Collision", "");
-	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
+	// ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_layer", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_layer", "get_collision_layer");
 	ADD_PROPERTY(PropertyInfo(Variant::INT, "collision_mask", PROPERTY_HINT_LAYERS_3D_PHYSICS), "set_collision_mask", "get_collision_mask");
 
 	ADD_GROUP("Stair Stepping", "stairs");
@@ -60,6 +63,7 @@ void JoltCharacter::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "stairs_step_up", PROPERTY_HINT_NONE, U"suffix:m"), "set_stairs_step_up", "get_stairs_step_up");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stairs_min_step_forward", PROPERTY_HINT_NONE, U"suffix:m"), "set_stairs_min_step_forward", "get_stairs_min_step_forward");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stairs_step_forward_test", PROPERTY_HINT_NONE, U"suffix:m"), "set_stairs_step_forward_test", "get_stairs_step_forward_test");
+	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "stairs_angle_forward_contact", PROPERTY_HINT_RANGE, U"0,90,0.01,radians_as_degrees"), "set_stairs_angle_forward_contact", "get_stairs_angle_forward_contact");
 	ADD_PROPERTY(PropertyInfo(Variant::VECTOR3, "stairs_step_down_extra", PROPERTY_HINT_NONE, U"suffix:m"), "set_stairs_step_down_extra", "get_stairs_step_down_extra");
 
 	ADD_GROUP("Stick to Floor", "stick_to_floor");
@@ -70,6 +74,9 @@ void JoltCharacter::_bind_methods() {
 	BIND_ENUM_CONSTANT(ON_STEEP_GROUND);
 	BIND_ENUM_CONSTANT(ON_WALL);
 	BIND_ENUM_CONSTANT(NONE);
+
+	BIND_ENUM_CONSTANT(CAPSULE);
+	BIND_ENUM_CONSTANT(CYLINDER);
 }
 
 void JoltCharacter::_notification(int p_what) {
@@ -107,7 +114,15 @@ void JoltCharacter::init_character() {
 	physics_system_ = &space_3d_->get_physics_system();
 
 	JPH::Ref settings = new JPH::CharacterVirtualSettings();
-	settings->mShape = new JPH::RotatedTranslatedShape(JPH::RVec3(0.0, height_ / 2.0, 0.0), JPH::QuatArg::sIdentity(), new JPH::CylinderShape(height_ / 2.0, radius_));
+
+	if (character_shape_ == CYLINDER) {
+		settings->mShape = new JPH::RotatedTranslatedShape(JPH::RVec3(0.0, height_ / 2.0, 0.0), JPH::QuatArg::sIdentity(), new JPH::CylinderShape(height_ / 2.0, radius_));
+	} else {
+		float capsule_half_height = (height_ / 2.0) - radius_;
+		settings->mShape = new JPH::RotatedTranslatedShape(JPH::RVec3(0.0, height_ / 2.0, 0.0), JPH::QuatArg::sIdentity(), new JPH::CapsuleShape(capsule_half_height, radius_));
+	}
+
+
 	settings->mEnhancedInternalEdgeRemoval = true;
 	settings->mSupportingVolume = { JPH::Vec3::sAxisY(), -0.25};
 
@@ -118,17 +133,21 @@ void JoltCharacter::init_character() {
 void JoltCharacter::deinit_character() {
 	character_ = nullptr;
 }
-bool JoltCharacter::try_set_shape(float radius, float height) {
+bool JoltCharacter::try_set_shape(float radius, float height, float max_penetration_depth) {
 	if (character_ == nullptr) { return true; }
+	JPH::RefConst<JPH::Shape> new_shape;
 
-	float capsule_half_height = (height / 2.0) - radius;
+	if (character_shape_ == CYLINDER) {
+		new_shape = new JPH::RotatedTranslatedShape(JPH::RVec3(0.0, height / 2.0, 0.0), JPH::QuatArg::sIdentity(), new JPH::CylinderShape(height / 2.0, radius));
+	} else {
+		float capsule_half_height = (height / 2.0) - radius;
+		new_shape = new JPH::RotatedTranslatedShape(JPH::RVec3(0.0, height / 2.0, 0.0), JPH::QuatArg::sIdentity(), new JPH::CapsuleShape(capsule_half_height, radius));
+	}
 
-	// JPH::RefConst<JPH::Shape> new_shape = new JPH::RotatedTranslatedShape(JPH::RVec3(0.0, height / 2.0, 0.0), JPH::QuatArg::sIdentity(), new JPH::CylinderShape(height / 2.0, radius));
-	JPH::RefConst<JPH::Shape> new_shape = new JPH::RotatedTranslatedShape(JPH::RVec3(0.0, height / 2.0, 0.0), JPH::QuatArg::sIdentity(), new JPH::CapsuleShape(capsule_half_height, radius));
 	JPH::ObjectLayer collision_layer = space_3d_->map_to_object_layer(JoltBroadPhaseLayer::BODY_DYNAMIC, 0, collision_mask_);
 
 	// TODO try_shape penetration depth needs to be a property
-	return character_->SetShape(new_shape, 0.05, physics_system_->GetDefaultBroadPhaseLayerFilter(collision_layer), physics_system_->GetDefaultLayerFilter(collision_layer), {}, {}, *allocator_);
+	return character_->SetShape(new_shape, max_penetration_depth, physics_system_->GetDefaultBroadPhaseLayerFilter(collision_layer), physics_system_->GetDefaultLayerFilter(collision_layer), {}, {}, *allocator_);
 }
 
 void JoltCharacter::move_and_step() {

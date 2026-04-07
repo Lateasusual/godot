@@ -3,9 +3,12 @@
 #include "Jolt/Jolt.h"
 #include "Jolt/Physics/Character/CharacterVirtual.h"
 #include "Jolt/Physics/PhysicsSystem.h"
+
+#include "core/config/engine.h"
+#include "scene/3d/node_3d.h"
+
 #include "modules/jolt_physics/misc/jolt_type_conversions.h"
 #include "modules/jolt_physics/spaces/jolt_space_3d.h"
-#include "scene/3d/node_3d.h"
 
 class JoltCharacter : public Node3D, public JPH::CharacterContactListener {
 	GDCLASS(JoltCharacter, Node3D);
@@ -28,11 +31,21 @@ private:
 	JPH::CharacterVirtual::ExtendedUpdateSettings stair_settings_;
 	JPH::CharacterVirtualSettings settings_;
 
-	int collision_layer_ = 1;
+	// TODO collision responses for virtual characters. Currently behaves as though layer is 0
+	// int collision_layer_ = 1;
 	int collision_mask_ = 1;
 
 	float height_ = 1.5;
 	float radius_ = 0.25;
+
+protected:
+	enum CharacterShape: uint8_t {
+		CAPSULE = 0,
+		CYLINDER,
+	};
+private:
+
+	CharacterShape character_shape_ = CAPSULE;
 
 	void reinitialize() {
 		if (character_ != nullptr) {
@@ -56,12 +69,12 @@ protected:
 	void deinit_character();
 	void sync_character();
 
-	int get_collision_layer() {
-		return collision_layer_;
-	}
-	void set_collision_layer(int collision_layer) {
-		collision_layer_ = collision_layer;
-	}
+	// int get_collision_layer() {
+	// 	return collision_layer_;
+	// }
+	// void set_collision_layer(int collision_layer) {
+	// 	collision_layer_ = collision_layer;
+	// }
 
 	int get_collision_mask() {
 		return collision_mask_;
@@ -70,7 +83,7 @@ protected:
 		collision_mask_ = collision_mask;
 	}
 
-	bool try_set_shape(float radius, float height);
+	bool try_set_shape(float radius, float height, float max_penetration_depth);
 
 	float get_radius() {
 		return radius_;
@@ -78,8 +91,8 @@ protected:
 	void set_radius(float radius) {
 		radius_ = radius;
 	}
-	bool try_set_radius(float radius) {
-		if (try_set_shape(radius, height_)) {
+	bool try_set_radius(float radius, float max_penetration_depth = 0.05) {
+		if (try_set_shape(radius, height_, max_penetration_depth)) {
 			set_radius(radius);
 			return true;
 		}
@@ -92,12 +105,24 @@ protected:
 	void set_height(float height) {
 		height_ = height;
 	}
-	bool try_set_height(float height) {
-		if (try_set_shape(radius_, height)) {
+	bool try_set_height(float height, float max_penetration_depth = 0.05) {
+		if (try_set_shape(radius_, height, max_penetration_depth)) {
 			set_height(height);
 			return true;
 		}
 		return false;
+	}
+
+
+	CharacterShape get_character_shape() {
+		return character_shape_;
+	}
+
+	void set_character_shape(CharacterShape p_shape) {
+		character_shape_ = p_shape;
+		if (!Engine::get_singleton()->is_editor_hint()) {
+			reinitialize();
+		}
 	}
 
 	void set_linear_velocity(Vector3 arg) {
@@ -159,6 +184,12 @@ protected:
 	/// Like move_and_slide() but with stair stepping
 	void move_and_step();
 
+	void set_stairs_angle_forward_contact(float stairs_cos_angle_forward_contact) {
+		stair_settings_.mWalkStairsCosAngleForwardContact = cosf(stairs_cos_angle_forward_contact);
+	}
+	float get_stairs_angle_forward_contact() const {
+		return acosf(stair_settings_.mWalkStairsCosAngleForwardContact);
+	}
 
 #define SETTINGS_SETGET_F(PropertyName, m_godot_name)                 \
 	void set_##m_godot_name(float m_godot_name) {                     \
@@ -190,8 +221,6 @@ protected:
 	STAIR_SETTINGS_SETGET(mWalkStairsStepUp, stairs_step_up, Vector3);
 	STAIR_SETTINGS_SETGET_F(mWalkStairsMinStepForward, stairs_min_step_forward);
 	STAIR_SETTINGS_SETGET_F(mWalkStairsStepForwardTest, stairs_step_forward_test);
-	// TODO custom setter/getter for this
-	// STAIR_SETTINGS_SETGET_F(mWalkStairsCosAngleForwardContact, stairs_cos_angle_forward_contact);
 	STAIR_SETTINGS_SETGET(mWalkStairsStepDownExtra, stairs_step_down_extra, Vector3);
 
 	SETTINGS_SETGET_F(MaxSlopeAngle, max_slope_angle);
@@ -208,6 +237,7 @@ protected:
 };
 
 VARIANT_ENUM_CAST(JoltCharacter::GroundState);
+VARIANT_ENUM_CAST(JoltCharacter::CharacterShape);
 
 #undef SETTINGS_SETGET_F
 #undef STAIR_SETTINGS_SETGET
