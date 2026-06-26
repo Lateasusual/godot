@@ -296,6 +296,7 @@ class EditorAssetLibrary : public PanelContainer {
 	void _force_online_mode();
 
 	LocalVector<bool> licenses_toggled;
+	bool licenses_all_toggled = true;
 
 	void _licenses_id_pressed(int p_id);
 	void _licenses_popup_hide();
@@ -351,6 +352,7 @@ class EditorAssetLibrary : public PanelContainer {
 	int current_page = 0;
 
 	HBoxContainer *_make_pages(int p_page, int p_page_count, int p_page_len, int p_total_items, int p_current_items);
+	void _update_button_icon(Button *p_button, const StringName &p_icon);
 
 	enum RequestType {
 		REQUESTING_NONE,
