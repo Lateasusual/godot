@@ -1405,6 +1405,8 @@ void Window::_update_viewport_size() {
 			case CONTENT_SCALE_MODE_DISABLED: {
 			} break;
 			case CONTENT_SCALE_MODE_CANVAS_ITEMS: {
+				screen_size = ((screen_size * scaling_3d_scale).floor() / scaling_3d_scale).floor();
+
 				final_size = screen_size;
 				final_size_override = viewport_size / content_scale_factor;
 				attach_to_screen_rect = Rect2(margin, screen_size);
