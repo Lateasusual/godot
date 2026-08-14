@@ -317,8 +317,8 @@ void JoltVehicleWheel::_bind_methods() {
 	BIND_SETGET(JoltVehicleWheel, max_brake_torque);
 	BIND_SETGET(JoltVehicleWheel, max_handbrake_torque);
 
-//	BIND_SETGET(JoltVehicleWheel, longitudinal_friction);
-//	BIND_SETGET(JoltVehicleWheel, lateral_friction);
+	BIND_SETGET(JoltVehicleWheel, longitudinal_friction);
+	BIND_SETGET(JoltVehicleWheel, lateral_friction);
 
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "inertia", PROPERTY_HINT_RANGE, "0,10,or_greater,hide_slider,suffix:kgm^2"), "set_inertia", "get_inertia");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "angular_damping", PROPERTY_HINT_RANGE, "0,1"), "set_angular_damping", "get_angular_damping");
@@ -326,8 +326,8 @@ void JoltVehicleWheel::_bind_methods() {
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_brake_torque", PROPERTY_HINT_RANGE, "0,500,or_greater,suffix:Nm"), "set_max_brake_torque", "get_max_brake_torque");
 	ADD_PROPERTY(PropertyInfo(Variant::FLOAT, "max_handbrake_torque", PROPERTY_HINT_RANGE, "0,500,or_greater,suffix:Nm"), "set_max_handbrake_torque", "get_max_handbrake_torque");
 
-//	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "longitudinal_friction", PROPERTY_HINT_RESOURCE_TYPE, "Curve", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_EDITOR_INSTANTIATE_OBJECT), "set_longitudinal_friction", "get_longitudinal_friction");
-//	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "lateral_friction", PROPERTY_HINT_RESOURCE_TYPE, "Curve", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_EDITOR_INSTANTIATE_OBJECT), "set_lateral_friction", "get_lateral_friction");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "longitudinal_friction", PROPERTY_HINT_RESOURCE_TYPE, "Curve", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_EDITOR_INSTANTIATE_OBJECT), "set_longitudinal_friction", "get_longitudinal_friction");
+	ADD_PROPERTY(PropertyInfo(Variant::OBJECT, "lateral_friction", PROPERTY_HINT_RESOURCE_TYPE, "Curve", PROPERTY_USAGE_DEFAULT | PROPERTY_USAGE_EDITOR_INSTANTIATE_OBJECT), "set_lateral_friction", "get_lateral_friction");
 }
 
 void JoltVehicleWheelTracked::_bind_methods() {
